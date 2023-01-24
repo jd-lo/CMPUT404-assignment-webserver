@@ -24,7 +24,7 @@ class ClientRequest:
             #The first entry "[REQ] / ... does not follow conventional pattern; deal with seperately"
             requestProtocolStr = keyValPairs.pop(0)
             sepEntries = requestProtocolStr.split(" ")
-            dictRequest.update({"method": sepEntries[0], "path": sepEntries[1].lstrip('/'), "protocol": sepEntries[2]})
+            dictRequest.update({"method": sepEntries[0], "protocol": sepEntries[1].lstrip('/'), "path": sepEntries[2]})
             
             #The next entry, Host needs to be split into respective host and port
             hostPortStr = keyValPairs.pop(0)
@@ -43,24 +43,8 @@ class ClientRequest:
     def isValid(self):
         return self.valid
 
-    def getResponse(self):
-        #Status, MIME types, body
-        if not self.isValid():
-            #Code 400 (Bad Request)
-            pass
-        elif self.getattr(self, 'method') != 'GET':
-            #Code 405 (Method not allowed)
-            pass
-        elif self.getattr(self, 'path') != path.exists():
-            #Code 301 (Redirect, provided corrected path exists)
-            #Code 404 If above fails (Not found otherwise)
-            pass
-        elif self.getattr(self, 'path') != path.isfile():
-            #Code 404 (Not found)
-            pass
-        else:
-            #Code 200 (OK)
-            pass
+    def getResponse(self, mode = 'f'):
+        pass
 
 #For use debugging
 if __name__=='__main__':
