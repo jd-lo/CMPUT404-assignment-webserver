@@ -4,28 +4,28 @@ from os import path
 import mimetypes
 import http_headers as header
 
+PATH_ROOT = "www"
+
 class Response:
     def __init__(self, request: ClientRequest):
         self.request = request
-        self.dirPath = self._getPath()
+        self.relPath = self._getRelPath()
+        self.absPath = PATH_ROOT + self.relPath
         self.statusCode = self._getStatusCode()
         self.body = self._encodeBody()
         self.mime = self._getMimeType()
         self.head = self._encodeHead()
 
-    def _getPath(self):
+    def _getRelPath(self):
         if not self.request.isValid(): return None
         
         requestPath = getattr(self.request, 'path')
         #Format the path to get expected result frrom isdir
-        if requestPath != '/':
-            #Return 200 on root request (despite no body)
-            requestPath = requestPath.lstrip('/')
-        
-        return requestPath
+        #Return 200 on root request (despite no body)
+        return requestPath 
 
     def _isProperPath(self):
-        return path.isdir(self.dirPath) and self.dirPath.endswith('/')
+        return path.isdir(self.absPath) and self.absPath.endswith('/')
 
     def _isGet(self):
         return getattr(self.request, 'method') == 'GET'
@@ -38,28 +38,31 @@ class Response:
         elif not self._isGet():
             return 405
         #OK
-        elif self._isProperPath() or path.isfile(self.dirPath) :
+        elif self._isProperPath() or path.isfile(self.absPath):
             return 200
         #Moved Permanently (Must supply location header)
-        elif path.isdir(self.dirPath):
+        elif path.isdir(PATH_ROOT + self.relPath):
             return 301
         #Not Found
-        else :
+        else:
             return 404
 
     def _getMimeType(self):
-        mimetype = mimetypes.guess_type(self.dirPath)
+        if path.isfile(self.absPath):
+            mimetype = mimetypes.guess_type(self.absPath)
+        else :
+            mimetype = mimetypes.guess_type(self.absPath + 'index.html')
         return mimetype
 
     def _encodeBody(self):
-        if path.isfile(self.dirPath):
-            with open(self.dirPath, 'rb') as body:
+        if path.isfile(self.absPath):
+            with open(self.absPath, 'rb') as body:
                 return body.read()
         #Send index.html of requested directory if such file exists
         elif self._isProperPath():
             try:
                 #Make both paths consistent
-                with open(self.dirPath + 'index.html', 'rb') as body:
+                with open(self.absPath + 'index.html', 'rb') as body:
                     return body.read()
             except :
                 return b''
@@ -72,8 +75,8 @@ class Response:
 
         headerSet += header.getStatusHeader(self.statusCode, encode)
         headerSet += header.getDateHeader(encode)
-        #if not self._isProperPath():
-            #headerSet += header.getLocationHeader(self.dirPath + '/index.html', encode)
+        if not self._isProperPath():
+            headerSet += header.getLocationHeader('http://127.0.0.1:8080' + self.relPath + '/', encode)
         if not self._isGet():
             headerSet += header.getAllowHeader(encode)
         if self.body:
