@@ -7,11 +7,22 @@ import http_headers as header
 class Response:
     def __init__(self, request: ClientRequest):
         self.request = request
-        self.dirPath = getattr(self.request, 'path') if self.request.isValid() else None 
+        self.dirPath = self._getPath()
         self.statusCode = self._getStatusCode()
         self.body = self._encodeBody()
         self.mime = self._getMimeType()
         self.head = self._encodeHead()
+
+    def _getPath(self):
+        if not self.request.isValid(): return None
+        
+        requestPath = getattr(self.request, 'path')
+        #Format the path to get expected result frrom isdir
+        if requestPath != '/':
+            #Return 200 on root request (despite no body)
+            requestPath = requestPath.lstrip('/')
+        
+        return requestPath
 
     def _isProperPath(self):
         return path.isdir(self.dirPath) and self.dirPath.endswith('/')
