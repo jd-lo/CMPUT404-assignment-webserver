@@ -1,8 +1,6 @@
 #Defines the logic involved in creating various headers
 
-from email.utils import format_datetime
-from itertools import always_iterable
-from response import Response
+from email.utils import formatdate
 
 #As defined by RFC 9110
 STATUS_MAP = {
@@ -30,7 +28,7 @@ def getStatusHeader(statusCode: int, encode = False):
     return _format(protocolPartial + statusPartial, encode)
 
 def getDateHeader(encode = False):
-    dateHeader = f'Date: {format_datetime(timeval = None, localtime = False, usegmt = False)}'
+    dateHeader = f'Date: {formatdate(timeval = None, localtime = False, usegmt = False)}'
     return _format(dateHeader, encode)
 
 def getLengthHeader(stream, encode = False):
@@ -38,8 +36,8 @@ def getLengthHeader(stream, encode = False):
     return _format(lengthHeader, encode)
 
 def getConnectionHeader(option = 'close', encode = False):
-    if option != 'close' or 'keep-alive':
-        raise ValueError
+    if option != 'close' and option != 'keep-alive':
+        raise ValueError('option must be \"close\" or \"keep-alive\"')
 
     connectionHeader = f'Connection: {option}'
     return _format(connectionHeader, encode)
@@ -60,7 +58,5 @@ def getAllowHeader(permittedMethods = ['GET'], encode = False):
 def getMimeHeader(mimetype, encode = False):
     mimeHeader = f'Content-Type: {mimetype}; charset={CHAR_SET}'
     return _format(mimeHeader, encode)
-
-def getAllHeaders(response: Response, encode = False):
 
 

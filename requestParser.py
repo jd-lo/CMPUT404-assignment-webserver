@@ -24,7 +24,7 @@ class ClientRequest:
             #The first entry "[REQ] / ... does not follow conventional pattern; deal with seperately"
             requestProtocolStr = keyValPairs.pop(0)
             sepEntries = requestProtocolStr.split(" ")
-            dictRequest.update({"method": sepEntries[0], "protocol": sepEntries[1].lstrip('/'), "path": sepEntries[2]})
+            dictRequest.update({"method": sepEntries[0], "path": sepEntries[1].lstrip('/'), "protocol": sepEntries[2]})
             
             #The next entry, Host needs to be split into respective host and port
             hostPortStr = keyValPairs.pop(0)
@@ -42,9 +42,6 @@ class ClientRequest:
 
     def isValid(self):
         return self.valid
-
-    def getResponse(self, mode = 'f'):
-        pass
 
 #For use debugging
 if __name__=='__main__':

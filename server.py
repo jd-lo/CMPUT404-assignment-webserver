@@ -35,9 +35,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
         parsed = ClientRequest(self.data)
-
         httpResponse = Response(parsed)
-
         self.request.sendall(httpResponse.encode())
 
 if __name__ == "__main__":
