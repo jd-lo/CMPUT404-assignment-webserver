@@ -32,11 +32,11 @@ from response import Response
 class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
-        self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        parsed = ParsedRequest(self.data)
-        httpResponse = Response(parsed)
-        self.request.sendall(httpResponse.encode())
+            self.data = self.request.recv(1024).strip()
+            print ("Got a request of: %s\n" % self.data)
+            parsed = ParsedRequest(self.data)
+            httpResponse = Response(parsed)
+            self.request.sendall(httpResponse.encode())
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080

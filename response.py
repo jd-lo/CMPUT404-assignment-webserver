@@ -10,10 +10,8 @@ class Response:
     def __init__(self, request: ParsedRequest):
         self.request = request
         #localhost:8080/deep -> www/deep
-        try:
-            self.path = constant.PATH_ROOT + request.get_field('path')
-        except error.HTTPError as e:
-            raise e
+        self.path = constant.PATH_ROOT + request.get_field('path')
+
         self.status_code = self.__get_status_code()
         self.mime = self.__get_mimetype()
 
@@ -31,21 +29,17 @@ class Response:
         return self.request.get_field('method') == 'GET'
 
     #See readme for acknowledgements
-    def __test_path_above_root(self):
+    def __path_above_root(self):
         current = getcwd()
-        match = pathfinder.abspath(self.request.get_field('path').lstrip('/'))
+        match = pathfinder.realpath(self.request.get_field('path').lstrip('/'))
 
-        if not current == pathfinder.commonpath([current, match]):
-            raise error.HTTPError(self.request.get_field('host'), constant.NOT_FOUND, 'Not Found', {}, None)
+        return current != pathfinder.commonpath([current, match])
 
     #TODO constant.FORBIDDEN if request for a resource above www 
     def __get_status_code(self):
-        #bubble up the stupid exception to be caught by unit test
-        try:
-            self.__test_path_above_root()
-        except error.HTTPError as e:
-            raise e
-
+        #Disallow acces to above
+        if self.__path_above_root():
+            return constant.NOT_FOUND
         if not self.request.is_valid():
             return constant.BAD_REQ
         elif not self.__method_is_get():
