@@ -1,6 +1,5 @@
 import constants as constant
 
-
 class ParsedRequest:
     def __init__(self, request: bytearray):
 

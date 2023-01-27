@@ -41,12 +41,14 @@ class Response:
             return constant.NOT_FOUND
     
     def __get_mimetype(self):
+        #Not unpacking tuple will result in unit test fail :(
         if pathfinder.isfile(self.path):
-            mimetype = mimetypes.guess_type(self.absPath)
+            (mimetype, value) = mimetypes.guess_type(self.path)
         elif self.__dir_has_index():
-            mimetype = mimetypes.guess_type(self.path + constant.INDEX_FILE)
+            (mimetype, value) = mimetypes.guess_type(self.path + constant.INDEX_FILE)
         else:
             mimetype = constant.MIME_DEFAULT
+
         return mimetype
 
     #Helper for wrapping headers in the proper byte-encoded format
@@ -63,9 +65,12 @@ class Response:
         if not self.__method_is_get():
             headers += header.mk_allow_header()
         #Only for redirects
-        if not self.__is_proper_dir():
+        if not self.__is_proper_dir() and not pathfinder.isfile(self.path):
             #Redirect to /path instead of www/path (www is only for internal server usage)
-            headers += header.mk_location_header(f'{constant.URL_SCHEME}{self.request.get_field("host")}/{self.request.get_field("path")}/')
+            redirect_URL = f'{constant.URL_SCHEME}{self.request.get_field("host")}{self.request.get_field("path")}/'
+            headers += header.mk_location_header(redirect_URL)
+
+        return headers
 
     #Helper for wrapping the body in the proper byte-encoded format
     def __encode_body(self):
@@ -83,7 +88,7 @@ class Response:
             return b''
 
     def encode(self):
-        return f'{self.__encode_head}{constant.HEADER_DELIMITER}{self.body}'
+        return self.__encode_head() + constant.HEADER_DELIMITER.encode(constant.CHAR_SET) + self.body
 
 if __name__ == '__main__':
     sampleReq = b'GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/109.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1'
