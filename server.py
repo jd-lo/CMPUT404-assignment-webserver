@@ -26,7 +26,7 @@ import socketserver
 
 # try: curl -v -X GET http://127.0.0.1:8080/
 
-from requestParser import ClientRequest
+from requestParser import ParsedRequest
 from response import Response
 
 class MyWebServer(socketserver.BaseRequestHandler):
@@ -34,7 +34,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
-        parsed = ClientRequest(self.data)
+        parsed = ParsedRequest(self.data)
         httpResponse = Response(parsed)
         self.request.sendall(httpResponse.encode())
 

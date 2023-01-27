@@ -1,62 +1,55 @@
 #Defines the logic involved in creating various headers
 
+import constants as constant
 from email.utils import formatdate
-
-#As defined by RFC 9110
-STATUS_MAP = {
-        200: 'OK',
-        301: 'Moved Permanently',   #Supply location header
-        400: 'Bad Request',
-        404: 'Not Found',
-        405: 'Method Not Found',    #Supply accept header
-        500: 'Internal Server Error'
-    }
 
 CHAR_SET = 'utf-8'
 
-def _format(header: str, encode = False):
+def __format(header: str, encode = True):
     fheader = header + '\r\n'
     if encode :
         fheader = bytearray(fheader, CHAR_SET)
-
     return fheader
 
-def getStatusHeader(statusCode: int, encode = False):
-    protocolPartial = f'HTTP/1.1 '
-    statusPartial = f'{statusCode} {STATUS_MAP[statusCode]}'
+def mk_status_header(status_code: int, encode = True):
+    status_header = f'{constant.PROTOCOL} {status_code} {constant.STATUS_MAP[status_code]}'
+    return __format(status_header, encode)
 
-    return _format(protocolPartial + statusPartial, encode)
+#See README for acknowledgement
+def mk_date_header(encode = True):
+    date_header = f'Date: {formatdate(timeval = None, localtime = False, usegmt = False)}'
+    return __format(date_header, encode)
 
-def getDateHeader(encode = False):
-    dateHeader = f'Date: {formatdate(timeval = None, localtime = False, usegmt = False)}'
-    return _format(dateHeader, encode)
+def mk_length_header(stream, encode = True):
+    length_header = f'Content-Length: {len(stream)}'
+    return __format(length_header, encode)
 
-def getLengthHeader(stream, encode = False):
-    lengthHeader = f'Content-Length: {len(stream)}'
-    return _format(lengthHeader, encode)
-
-def getConnectionHeader(option = 'close', encode = False):
+def mk_connection_header(option = 'close', encode = True):
     if option != 'close' and option != 'keep-alive':
         raise ValueError('option must be \"close\" or \"keep-alive\"')
 
-    connectionHeader = f'Connection: {option}'
-    return _format(connectionHeader, encode)
+    connection_header = f'Connection: {option}'
+    return __format(connection_header, encode)
 
 #Does not check validity of path
-def getLocationHeader(filepath, encode = False):
-    locationHeader = f'Location: {filepath}'
-    return _format(locationHeader, encode)
+def mk_location_header(filepath, encode = True):
+    location_header = f'Location: {filepath}'
+    return __format(location_header, encode)
 
-def getAllowHeader(permittedMethods = ['GET'], encode = False):
-    allowHeader = 'Allow: '
-    for method in permittedMethods:
-        allowPartial += method
-        if method.index() != -1:
-            allowPartial += ','
-    return _format(allowHeader, encode)
+def mk_allow_header(permitted_methods = ['GET'], encode = True):
+    allow_header = 'Allow: '
+    allow_partial = ''
+    for index, method in enumerate(permitted_methods):
+        allow_partial += method
+        if index < len(permitted_methods) - 1:
+            allow_partial += ', '
+    allow_header += allow_partial
 
-def getMimeHeader(mimetype, encode = False):
-    mimeHeader = f'Content-Type: {mimetype}; charset={CHAR_SET}'
-    return _format(mimeHeader, encode)
+    return __format(allow_header, encode)
 
+def mk_mime_header(mimetype, encode = True):
+    mime_header = f'Content-Type: {mimetype}; charset={CHAR_SET}'
+    return __format(mime_header, encode)
 
+if __name__ == '__main__':
+    print(mk_allow_header(encode = False))
