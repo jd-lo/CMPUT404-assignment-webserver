@@ -1,14 +1,19 @@
 from requestParser import ParsedRequest
 import constants as constant
 from os import path as pathfinder
+from os import getcwd
 import mimetypes
 import http_headers as header
+import urllib.error as error
 
 class Response:
     def __init__(self, request: ParsedRequest):
         self.request = request
         #localhost:8080/deep -> www/deep
-        self.path = constant.PATH_ROOT + request.get_field('path')
+        try:
+            self.path = constant.PATH_ROOT + request.get_field('path')
+        except error.HTTPError as e:
+            raise e
         self.status_code = self.__get_status_code()
         self.mime = self.__get_mimetype()
 
@@ -25,8 +30,22 @@ class Response:
     def __method_is_get(self):
         return self.request.get_field('method') == 'GET'
 
+    #See readme for acknowledgements
+    def __test_path_above_root(self):
+        current = getcwd()
+        match = pathfinder.abspath(self.request.get_field('path').lstrip('/'))
+
+        if not current == pathfinder.commonpath([current, match]):
+            raise error.HTTPError(self.request.get_field('host'), constant.NOT_FOUND, 'Not Found', {}, None)
+
     #TODO constant.FORBIDDEN if request for a resource above www 
     def __get_status_code(self):
+        #bubble up the stupid exception to be caught by unit test
+        try:
+            self.__test_path_above_root()
+        except error.HTTPError as e:
+            raise e
+
         if not self.request.is_valid():
             return constant.BAD_REQ
         elif not self.__method_is_get():
@@ -41,7 +60,7 @@ class Response:
             return constant.NOT_FOUND
     
     def __get_mimetype(self):
-        #Not unpacking tuple will result in unit test fail :(
+        #Not unpacking tuple will result in CSS unit test fail :(
         if pathfinder.isfile(self.path):
             (mimetype, value) = mimetypes.guess_type(self.path)
         elif self.__dir_has_index():
@@ -91,7 +110,7 @@ class Response:
         return self.__encode_head() + constant.HEADER_DELIMITER.encode(constant.CHAR_SET) + self.body
 
 if __name__ == '__main__':
-    sampleReq = b'GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/109.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1'
+    sampleReq = b'GET /../../../../../../../../../../../../etc/group HTTP/1.1\r\nAccept-Encoding: identity\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Python-urllib/3.8\r\nConnection: close'
     test = ParsedRequest(sampleReq)
     m = Response(test)
     a = m.encode()

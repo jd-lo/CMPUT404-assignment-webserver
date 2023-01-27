@@ -36,16 +36,20 @@ def mk_location_header(filepath, encode = True):
     location_header = f'Location: {filepath}'
     return __format(location_header, encode)
 
-def mk_allow_header(permittedMethods = ['mk'], encode = True):
+def mk_allow_header(permitted_methods = ['GET'], encode = True):
     allow_header = 'Allow: '
-    for method in permittedMethods:
-        allowPartial += method
-        if method.index() != -1:
-            allowPartial += ','
+    allow_partial = ''
+    for index, method in enumerate(permitted_methods):
+        allow_partial += method
+        if index < len(permitted_methods) - 1:
+            allow_partial += ', '
+    allow_header += allow_partial
+
     return __format(allow_header, encode)
 
 def mk_mime_header(mimetype, encode = True):
     mime_header = f'Content-Type: {mimetype}; charset={CHAR_SET}'
     return __format(mime_header, encode)
 
-
+if __name__ == '__main__':
+    print(mk_allow_header(encode = False))
