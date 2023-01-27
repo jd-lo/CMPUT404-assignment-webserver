@@ -1,5 +1,5 @@
-HEADER_DELIMITER = '\r\n'
-ENCODING = 'utf-8'
+import constants as constant
+
 
 class ParsedRequest:
     def __init__(self, request: bytearray):
@@ -7,16 +7,19 @@ class ParsedRequest:
         self.valid = False
         self.header_dict = {}
 
-        parsed_request = self.__parse_headers(request)
-        if parsed_request:
-            self.valid = True
-            for field, value in parsed_request.items():
-                self.__setattr__(field, value)
+        try:
+            self.__parse_headers(request)
+            if self.header_dict:
+                self.valid = True
+                for field, value in self.header_dict.items():
+                    self.__setattr__(field, value)
+        except Exception as e:
+            print(e)
         
-    #Converts a request byte sequence into a dictionary, return None if request is not correct format.
+    #Mutates dictionary of headers to contain all relevant fields for easy access
     def __parse_headers(self, request: bytearray) :
-        tokenStream = request.decode(ENCODING)
-        headers = tokenStream.split(HEADER_DELIMITER)
+        tokenStream = request.decode(constant.CHAR_SET)
+        headers = tokenStream.split(constant.HEADER_DELIMITER)
 
         try:
             #The first entry "[REQ] / ... does not follow conventional pattern; deal with seperately"
@@ -24,11 +27,10 @@ class ParsedRequest:
             
             #All remaining entries standard. (Some additional handling for host)
             [self.__parse_std_header(header) for header in headers]
-            self.__split_host_port()
+            #self.__split_host_port()
 
         except Exception as e:
             print('Bad Request', e)
-            return None
 
     def __parse_initial_header(self, header: str):
         sep_entries = header.split(' ')
@@ -65,6 +67,6 @@ class ParsedRequest:
 if __name__ == "__main__":
     #For use debugging
     req = b'bananas GET / HTTP/1.1\r\nAccept-Encoding: identity\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Python-urllib/3.8\r\nConnection: close'
-    req2 = b'GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1'
+    req2 = b'GET /www/ HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1'
     a = ParsedRequest(req2)
     print(a.get_field("host"))
